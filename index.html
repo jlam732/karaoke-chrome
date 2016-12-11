@@ -1,9 +1,176 @@
 <!DOCTYPE html>
-<html>
+<html style="height:100%;margin:0;padding:0;">
 <head>
   <meta charset="utf-8">
+  <title>Karaoke Chrome</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script src="js/config.js"></script>
 </head>
-<body>
-  <h1>Hello, let's code!</h1>
+<body style="height:100%;margin:0;padding:0;">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-10">
+        <h2>Playlist</h2>
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-danger">
+          Clear Playlist
+        </button>
+      </div>
+    </div>
+    <div id="playlist">
+      No songs in playlists
+    </div>
+    <div class="row">
+      <h2>Add Song</h2>
+      <div class="col-md-12">
+        <div class="col-md-6">
+          <div class="input-group">
+            <input type="text" id="input-video" class="form-control text-input" placeholder="Search for video...">
+            <span class="input-group-btn">
+              <button class="btn btn-default" data-type="video" type="button" onClick="queryVideo()">Go!</button>
+            </span>
+          </div>
+          <div id="video-results" class="col-md-12">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="input-group">
+            <input type="text" class="form-control text-input" id="input-lyrics" placeholder="Search for lyrics...">
+            <span class="input-group-btn">
+              <button class="btn btn-default" type="button" data-type="lyrics" onClick="queryLyrics()">Go!</button>
+            </span>
+          </div>
+          <div id="lyric-results" class="col-md-12">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
+<script type="text/javascript">
+  //do get request like this https://www.google.nl/search?q=google+search+bar
+  // var wsUri = "ws://localhost:80/stream";
+  // function init() {
+  //     testWebSocket();
+  // }
+  // function testWebSocket() {
+  //     websocket = new WebSocket(wsUri);
+  //     websocket.onopen = function(evt) {
+  //         onOpen(evt) };
+  //     websocket.onclose = function(evt) {
+  //         onClose(evt) };
+  //     websocket.onmessage = function(evt) {
+  //         onMessage(evt) };
+  //     websocket.onerror = function(evt) {
+  //         onError(evt) };
+  // }
+  // function onOpen(evt) {
+  //     console.log("connected");
+  // }
+  // function onClose(evt) {
+  //     console.log("disconnected");
+  // }
+  // function onMessage(evt) {
+  //     try{
+  //         var data = JSON.parse(evt.data);
+  //         var key = data['serial'];
+  //         $('#' + key + '-timestamp').text("Timestamp: " + data.lastReported);
+  //         $('#' + key + '-topic').text("Topic: " + data.lastTopic);
+  //         $('#' + key + '-msg').text("Message: " + data.lastPayload);
+  //     }catch(e){
+  //         console.log(e);
+  //     }
+  //     console.log(evt.data);
+  // }
+  // function onError(evt) {
+  //     console.log(evt.data);
+  // }
+
+  // window.addEventListener("load", init, false);
+
+  function onClientLoad() {
+    console.log("client load");
+    gapi.client.load('youtube', 'v3', onYouTubeApiLoad);
+  }
+
+  function onYouTubeApiLoad() {
+    console.log("loaded youtube api");
+    gapi.client.setApiKey(API_KEY);
+  }
+
+  $(".text-input").on('keyup', function (e) {
+    if (e.keyCode == 13) {
+      if (e.target.id === "input-video") {
+        queryVideo();
+        if ($('#input-lyrics').val().length === 0) {
+          $('#input-lyrics').val($('#input-video').val());
+          queryLyrics();
+        }
+      } else if (e.target.id === "input-lyrics") {
+        queryLyrics();
+      }
+    }
+  });
+
+  function selectVideo(video, e) {
+    console.log("I selected this video");
+    console.log(video.id.videoId);
+  }
+
+  function createVideoRow(video) {
+    var row = document.createElement('div');
+    row.className = "row";
+
+    //youtube videos follow the pattern https://www.youtube.com/watch?v=VuNIsY6JdUw
+    var thumbnail = video.snippet.thumbnails.default;
+    $(row).append(
+      '<div class="col-md-4 video-row" style="padding-top:35px;" data-id="' + video.id.videoId + '">' +
+        '<div class="thumbnail">' +
+          '<img src="' + thumbnail.url + '" width="' + thumbnail.width + '" height="' + thumbnail.height + '"/>' +
+        '</div>' +
+      '</div>'
+    ).append(
+      '<div class="col-md-8">' +
+        '<h3>' + video.snippet.title + '</h3>' +
+        '<div class="caption">' +
+          '<p>' + video.snippet.description + '</p>' +
+        '</div>' +
+      '</div>'
+    );
+    row.addEventListener('click', selectVideo.bind(null, video));
+    return row;
+  }
+
+  function queryVideo() {
+    var data = $("#input-video").val();
+    console.log("query video " + data);
+    $('#video-results').empty();
+    var request = gapi.client.youtube.search.list({
+      q: data,
+      type: 'video',
+      part: 'snippet'
+    });
+
+    request.execute(function(response) {
+      var results = response.result;
+      for (var i = 0; i < results.items.length; i++) {
+        var video = results.items[i];
+        $('#video-results').append(createVideoRow(video));
+      }
+    });
+  }
+
+  function queryLyrics() {
+    var data = $("#input-lyrics").val();
+    console.log("query lyrics " + data);
+  }
+
+  function addToPlaylist() {
+
+  }
+</script>
+<script src="https://apis.google.com/js/client.js?onload=onClientLoad"></script>
 </html>
