@@ -13,6 +13,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 var config = require(__dirname + '/config');
 
+var scraper = require('google-search-scraper');
+
 //basic-auth middleware
 var auth = function (req, res, next) {
   function unauthorized(res) {
@@ -77,42 +79,27 @@ app.get("/", function(req, res) {
     res.sendFile("index.html", {root: __dirname});
 });
 
-app.post("/video/list", auth, function(req, res) {
+app.get("/lyrics/list", function(req, res) {
   var data = req.query.data;
-  // var post_data = "";
-  // if (!req.body.data) {
-  //   return res.send(400, {error: "no data found"});
-  // }
-  // try {
-  //   post_data = JSON.parse(req.body.data);
-  // } catch(e) {
-  //   return res.send(400, {error: e});
-  // }
+  var options = {
+    query: data,
+    limit: 5
+  };
 
-  pool.getConnection((mysql_err, connection) => {
-    if (mysql_err) {
-      console.error("Error getting connection: " + mysql_err);
-      return res.send(500, {error: mysql_err});
+  var defer = when.defer();
+
+  var results = [];
+  var count = 0;
+  scraper.search(options, function(err, result) {
+    // This is called for each result
+    if (err) {
+      res.send(404);
     }
-    var grouping = (+new Date).toString(36).substr(2, 5);
-    var promises = post_data.map((person) => {
-      return rsvp(
-        person.first_name,
-        person.last_name,
-        person.contact,
-        grouping,
-        connection
-      );
-    });
-    Promise.all(promises).then((results) => {
-      connection.release();
-      //send emails
-      return res.send(200, results);
-    }, (error) => {
-      connection.release();
-      console.error("Error during promises: " + error);
-      return res.send(500, {error: error});
-    });
+    results.push(result);
+    count += 1;
+    if (count === 5) {
+      res.status(200).json(results);
+    }
   });
 });
 

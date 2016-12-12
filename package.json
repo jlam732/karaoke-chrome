@@ -7,6 +7,6 @@
     "express": "^4.14.0",
     "mysql": "^2.11.1",
     "when": "^3.7.7",
-    "node-google-search-scraper": "git://github.com/jlam732/node-google-search-scraper.git#06b889043eb271f048d0f380cbc387a0eb2f04c1"
+    "google-search-scraper": "git://github.com/jlam732/node-google-search-scraper.git#e2a41d4be6af209e2fc265029d088b9e08180660"
   }
 }

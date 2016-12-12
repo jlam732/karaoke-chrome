@@ -106,7 +106,11 @@
       if (e.target.id === "input-video") {
         queryVideo();
         if ($('#input-lyrics').val().length === 0) {
-          $('#input-lyrics').val($('#input-video').val());
+          var text = $('#input-video').val();
+          if (text.indexOf("lyrics") === -1) {
+            text += " lyrics";
+          }
+          $('#input-lyrics').val(text);
           queryLyrics();
         }
       } else if (e.target.id === "input-lyrics") {
@@ -163,9 +167,50 @@
     });
   }
 
+  function selectLyric(lyric, e) {
+    console.log("I selected this lyric");
+    console.log(lyric);
+  }
+
+  function createLyricRow(lyric) {
+    var row = document.createElement('div');
+    row.className = "row";
+
+    $(row).append(
+      '<div class="col-md-12">' +
+        '<h3>' + lyric.title + '</h3>' +
+        '<div class="caption">' +
+          '<p style="text-decoration: underline;">' + lyric.link + '</p>' +
+          '<p>' + lyric.data + '</p>' +
+        '</div>' +
+      '</div>'
+    );
+    row.addEventListener('click', selectLyric.bind(null, lyric));
+    return row;
+  }
+
   function queryLyrics() {
     var data = $("#input-lyrics").val();
     console.log("query lyrics " + data);
+    $('#lyric-results').empty();
+    $.ajax({
+      url: '/lyrics/list',
+      method: 'GET',
+      data: {
+        data: data
+      },
+      success: function(results) {
+        console.log("Got lyrics");
+        console.log(results);
+        for (var i = 0; i < results.length; i++) {
+          var lyric = results[i];
+          $('#lyric-results').append(createLyricRow(lyric));
+        }
+      },
+      error: function(err) {
+          console.log(err);
+      }
+    });
   }
 
   function addToPlaylist() {
