@@ -126,9 +126,14 @@
 
   function selectVideo(index, video, e) {
     console.log("I selected this video");
-    selected.video = video;
-    $(".videos.selected").removeClass("selected");
-    $("#video-" + index).addClass("selected");
+    if ($("#video-" + index + ".selected").length > 0) {
+      $(".videos.selected").removeClass("selected");
+      selected.video = "";
+    } else {
+      $(".videos.selected").removeClass("selected");
+      selected.videos = video;
+      $("#video-" + index).addClass("selected");
+    }
   }
 
   function createVideoRow(index, video) {
@@ -177,9 +182,14 @@
 
   function selectLyric(index, lyric, e) {
     console.log("I selected this lyric");
-    selected.lyrics = lyric;
-    $(".lyrics.selected").removeClass("selected");
-    $("#lyric-" + index).addClass("selected");
+    if ($("#lyric-" + index + ".selected").length > 0) {
+      $(".lyrics.selected").removeClass("selected");
+      selected.lyrics = "";
+    } else {
+      $(".lyrics.selected").removeClass("selected");
+      selected.lyrics = lyric;
+      $("#lyric-" + index).addClass("selected");
+    }
   }
 
   function createLyricRow(index, lyric) {
