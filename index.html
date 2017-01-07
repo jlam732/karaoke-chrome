@@ -19,6 +19,9 @@
         <button type="button" class="btn btn-danger">
           Clear Playlist
         </button>
+        <button type="button" class="btn btn-success" onClick="addToPlaylist()">
+          Add Selected to Playlist
+        </button>
       </div>
     </div>
     <div id="playlist">
@@ -131,7 +134,7 @@
       selected.video = "";
     } else {
       $(".videos.selected").removeClass("selected");
-      selected.videos = video;
+      selected.video = video;
       $("#video-" + index).addClass("selected");
     }
   }
@@ -235,8 +238,22 @@
   }
 
   function addToPlaylist() {
-
+    if (selected.video === "")
+      return;
+    $.ajax({
+      url: '/playlist',
+      method: 'POST',
+      data: selected,
+      json: true,
+      success: function(response) {
+        console.log(response);
+      },
+      error: function(err) {
+        console.log(err);
+      }
+    });
   }
+
 </script>
 <script src="https://apis.google.com/js/client.js?onload=onClientLoad"></script>
 </html>

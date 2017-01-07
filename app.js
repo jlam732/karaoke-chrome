@@ -6,14 +6,18 @@ var basicAuth = require("basic-auth");
 var mysql = require("mysql");
 var when = require("when");
 var async = require("async");
+var scraper = require('google-search-scraper');
+var bodyParser = require('body-parser')
+
+var config = require(__dirname + '/config');
 
 var app = express();
 app.set("view engine", "jade");
 app.use(express.static(path.join(__dirname, "public")));
-
-var config = require(__dirname + '/config');
-
-var scraper = require('google-search-scraper');
+app.use(bodyParser.json());       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+}));
 
 //basic-auth middleware
 var auth = function (req, res, next) {
@@ -103,6 +107,42 @@ app.get("/lyrics/list", function(req, res) {
   });
 });
 
+app.post("/playlist", function(req, res) {
+  var data = req.body;
+
+  pool.getConnection((mysql_err, connection) => {
+    var defer = when.defer();
+    var query_string = "INSERT INTO playlist " +
+      "(name, videoId, lyrics, createdAt) " +
+      "VALUES " +
+      "(?, ?, ?, from_unixtime(?)) ";
+    var parameters = [
+      data.video.snippet.title,
+      data.video.id.videoId,
+      data.lyrics.link,
+      parseInt(Date.now()/1000)
+    ];
+    var item = {
+      name: data.video.snippet.title,
+      videoId: data.video.id.videoId,
+      lyrics: data.lyrics.link
+    };
+
+    connection.query(query_string, parameters, function(err, result) {
+      if (err) {
+        console.error("Error running query: " + err);
+        defer.reject({error: err});
+      }
+      defer.resolve(result.insertId);
+    });
+
+    defer.promise.then((id) => {
+      item.id = id;
+      return res.status(200).json(item);
+    });
+  });
+});
+
 var port = process.env.PORT || 8080;
 var server = app.listen(port);
 console.log("Listening on port " + port);
@@ -111,13 +151,12 @@ console.log("Listening on port " + port);
 //   if (err)
 //     console.log(err);
 //   var query_string =
-//     "CREATE TABLE attendees (" +
+//     "CREATE TABLE playlist (" +
 //     "id int(11) NOT NULL AUTO_INCREMENT, " +
-//     "first_name varchar(255) NOT NULL, " +
-//     "last_name varchar(255) NOT NULL, " +
-//     "contact varchar(255) DEFAULT NULL, " +
+//     "name varchar(255) NOT NULL, " +
+//     "videoId varchar(255) NOT NULL, " +
+//     "lyrics varchar(510) DEFAULT NULL, " +
 //     "createdAt datetime NOT NULL, " +
-//     "grouping varchar(20) NOT NULL, " +
 //     "PRIMARY KEY (`id`)" +
 //     ")";
 //   connection.query(query_string, [], (err, results) => {
