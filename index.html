@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>Karaoke Chrome</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/styles.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <script src="js/config.js"></script>
@@ -51,6 +52,10 @@
   </div>
 </body>
 <script type="text/javascript">
+  var selected = {
+    video: "",
+    lyrics: ""
+  };
   //do get request like this https://www.google.nl/search?q=google+search+bar
   // var wsUri = "ws://localhost:80/stream";
   // function init() {
@@ -119,19 +124,22 @@
     }
   });
 
-  function selectVideo(video, e) {
+  function selectVideo(index, video, e) {
     console.log("I selected this video");
-    console.log(video.id.videoId);
+    selected.video = video;
+    $(".videos.selected").removeClass("selected");
+    $("#video-" + index).addClass("selected");
   }
 
-  function createVideoRow(video) {
+  function createVideoRow(index, video) {
     var row = document.createElement('div');
-    row.className = "row";
+    row.id = "video-" + index;
+    row.className = "row videos";
 
     //youtube videos follow the pattern https://www.youtube.com/watch?v=VuNIsY6JdUw
     var thumbnail = video.snippet.thumbnails.default;
     $(row).append(
-      '<div class="col-md-4 video-row" style="padding-top:35px;" data-id="' + video.id.videoId + '">' +
+      '<div class="col-md-4 video-row" style="padding-top:35px;">' +
         '<div class="thumbnail">' +
           '<img src="' + thumbnail.url + '" width="' + thumbnail.width + '" height="' + thumbnail.height + '"/>' +
         '</div>' +
@@ -144,7 +152,7 @@
         '</div>' +
       '</div>'
     );
-    row.addEventListener('click', selectVideo.bind(null, video));
+    row.addEventListener('click', selectVideo.bind(null, index, video));
     return row;
   }
 
@@ -162,19 +170,22 @@
       var results = response.result;
       for (var i = 0; i < results.items.length; i++) {
         var video = results.items[i];
-        $('#video-results').append(createVideoRow(video));
+        $('#video-results').append(createVideoRow(i, video));
       }
     });
   }
 
-  function selectLyric(lyric, e) {
+  function selectLyric(index, lyric, e) {
     console.log("I selected this lyric");
-    console.log(lyric);
+    selected.lyrics = lyric;
+    $(".lyrics.selected").removeClass("selected");
+    $("#lyric-" + index).addClass("selected");
   }
 
-  function createLyricRow(lyric) {
+  function createLyricRow(index, lyric) {
     var row = document.createElement('div');
-    row.className = "row";
+    row.className = "row lyrics";
+    row.id = "lyric-" + index;
 
     $(row).append(
       '<div class="col-md-12">' +
@@ -185,7 +196,7 @@
         '</div>' +
       '</div>'
     );
-    row.addEventListener('click', selectLyric.bind(null, lyric));
+    row.addEventListener('click', selectLyric.bind(null, index, lyric));
     return row;
   }
 
@@ -204,7 +215,7 @@
         console.log(results);
         for (var i = 0; i < results.length; i++) {
           var lyric = results[i];
-          $('#lyric-results').append(createLyricRow(lyric));
+          $('#lyric-results').append(createLyricRow(i, lyric));
         }
       },
       error: function(err) {
